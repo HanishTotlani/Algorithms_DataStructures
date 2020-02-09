@@ -1,175 +1,215 @@
 ---
 layout: page-fullwidth
-title:  "Custom validation in angular"
+title:  "Cummunication Between Components In Angular"
 categories:
     - angular
 tags: 
     - angular
-    - validation
-    - template driven forms
-    - reactive forms
+    - Cummunication
+    - Data Transfer
+    - Component Interaction
+    - Pass Data
 header: no
 breadcrumb: true
-meta_description: "Creating custom validator in angular."
+meta_description: "Cummunication Between Components In Angular"
 author: Hanish Totlani
 ---
 
-In this post I am going to share how to build custom validator and add this validator in `Template Driven Forms` or `Reactive Forms`.
+In this post, I am going to share how to pass data between components and which is the best way depending upon the scenario.
 
+## 1. Pass Data From URL;
 
-Here, I am going to demonstrate the validation of phone number which should be of 10 digits.
+Consider that we are navigating from one page to another in which the previous page is destroyed and we are landing on another page. Then if the data is small (eg. id of an object) then we can use url to pass the data.
 
+There are two ways to pass the data through url in angular.
+* Router Parameters.
+* Query Params
 
-[Invalid-Phone](./images/custom-validation/invalid-form-control.PNG)
-[Valid-Phone](./images/custom-validation/valid-form-contol.PNG)
+### Router Parameters
 
+Router parameters are required parameters. If the parameter is mandatory for the component then only we have to use **router parameter**. Other wise we can use **query params**. We have to register the parameter with the url in the router module like,
 
-## Validator for Template Driven Form
-
-For validation in template driven forms directives are used.
-
-
-<p class="file-desc"><span>phone-number-validator.ts</span></span></p>
+<p class="file-desc"><span>app-router.module.ts</span></p>
 
 ```typescript
-    import { Directive } from '@angular/core';
-    import { Validator, AbstractControl, NG_VALIDATORS } from '@angular/forms';
+    const routes: Routes = [
+  { path: 'list/:id', component: AppListComponent}
+];
+```
 
-    @Directive({
-        selector: '[phoneValidateDirective]',
-        providers: [{
-            provide: NG_VALIDATORS,
-            useExisting: AppPhoneValidateDirective,
-            multi: true
-        }]
-    })
-    export class AppPhoneValidateDirective implements Validator {
-        validate(control: AbstractControl) : {[key: string]: any} | null {
-            if (control.value && control.value.length != 10) {
-                return { 'phoneNumberInvalid': true }; // return object if the validation is not passed.
-            }
-            return null; // return null if validation is passed.
-        }
+Here _list_ is the route url and *:id* is the router param which is mandatory to pass and *AppListComponent* is the component.
+
+#### Pass router param through routerLink
+
+```html
+    <button type="button" [routerLink]="['/list', id]">Show List</button>
+```
+
+Here *id* is the variable initialized in *.ts* file and the */list* is the route on which we want to navigate.
+
+#### Pass router param through Route Service
+
+<p class="file-desc"><span>app.component.ts</span></p>
+
+```typescript
+    id = 28;
+    constructor (private router: Router) {
+    }
+
+    route() {
+        this.router.navigate(['/list', this.id]);
     }
 ```
 
-To register and add the validator to the existing validator array `NG_VALIDATORS` provided by angular this is **important**;
+#### For reading router params
 
+<p class="file-desc"><span>app-list.component.ts</span></p>
 
 ```typescript
-    providers: [{
-            provide: NG_VALIDATORS,
-            useExisting: Your_Class_Name,
-            multi: true
-        }]
+    constructor(
+        private activatedroute: ActivatedRoute
+    ) {
+        this.activatedroute.params.subscribe(data => {
+            console.log(data);
+        })
+    }
 ```
 
-Here I have created the phone directive which implements `Validator` of `@angular/forms` for which we have to provide implementation `validate(control: AbstractControl): : {[key: string]: any} | null`  method. This validator will return an object if the validation is not passed which is `{ 'phoneNumberInvalid': true }`  and will return null if the validation is passed.
+For more detail on router params you can visit [this]()
 
 
+### Query Params
 
-Angular adds the return value of the validation function in errors property of [FormControl](https://angular.io/api/forms/FormControl) / [NgModel](https://angular.io/api/forms/NgModel). If the errors property of the [FormControl](https://angular.io/api/forms/FormControl) / [NgModel](https://angular.io/api/forms/NgModel) is not empty then the form is invalid and if the errors property is empty then the form is valid.
+Query params are optional params. There is no need to register seperate url for the query params.
 
+<p class="file-desc"><span>app-router.module.ts</span></p>
 
-<p class="file-desc"><span>app.component.html</span></span></p>
+```typescript
+    const routes: Routes = [
+  { path: 'list', component: AppListComponent}
+];
+```
+
+Here _list_ is the route url and *AppListComponent* is the component.
+
+#### Pass query param through routerLink
 
 ```html
-    <div class="form-group col-sm-4">
-        <label for="">Phone</label>
-        <input type="text" class="form-control" name="phone" [(ngModel)]="phone" [class.is-invalid]="phonengModel.errors?.phoneNumberInvalid && (phonengModel.touched || phonengModel.dirty)" #phonengModel="ngModel" phoneValidateDirective>    <!-- Added directive to validate phone -->
-        <span class="invalid-feedback" *ngIf="(phonengModel.touched || phonengModel.dirty) && phonengModel.errors?.phoneNumberInvalid"> <!-- Checked the errors property contains the 'phoneNumberInvalid' property or not which is returned by the validation function -->
-            Phone number must be of 10 digit
-        </span>
-    </div>
+    <button type="button" [routerLink]="['/list']" [queryParams]="{id: '24'}">Show List</button>
 ```
 
-## Validator for Reactive Form
+Here *id* is the key and 24 is the static value. You can also pass the dynamic value through variable.
 
-For validation in Reactive Form we have to create a function.
+#### Pass router Param through Route Service
 
-<p class="file-desc"><span>app.component.ts</span></span></p>
+<p class="file-desc"><span>app.component.ts</span></p>
 
 ```typescript
-    import { FormBuilder, AbstractControl } from '@angular/forms';
-    import { Component, OnInit } from "@angular/core";
+    id = 28;
+    constructor (private router: Router) {
+    }
+
+    route() {
+        this.router.navigate(['/list'], {queryParams: {id: this.id}});
+    }
+```
+
+#### For reading query params
+
+<p class="file-desc"><span>app-list.component.ts</span></p>
+
+```typescript
+    constructor(
+        private activatedroute: ActivatedRoute
+    ) {
+        this.activatedroute.queryParams.subscribe(data => {
+            console.log(data);
+        })
+    }
+```
+
+Get more detail on [router params](https://alligator.io/angular/query-parameters/)
+
+## 2. Pass Data through @Input and @Output;
+
+If we want to pass the date from child to parent or parent to child and the hierarchy is one or two then we can use @Input and @Output.
+
+<p class="file-desc"><span>app-parent.component.html</span></p>
+
+```html
+    <app-child [jsonData]="data" (outputData)="data = $event"></app-child>
+```
+
+Here *data* is a variable initialized in typescript file.
+
+<p class="file-desc"><span>app-child.component.ts</span></p>
+
+```typescript
+    import { Component, Input, OnInit } from '@angular/core';
 
     @Component({
-        selector: 'reactive-form',
-        templateUrl: './reactive-form.component.html'
+        selector:  'app-child',
+        template: ''
     })
-    export class AppReactiveForm implements OnInit {
+    export class AppChild implements OnInit {
 
-        myForm: FormGroup;
-
-        constructor(
-            private fb: FormBuilder
-        ) {
+        @Input() 
+        jsonData;
+        @Output()
+        outputData  = new EventEmitter();
+        constructor() {
 
         }
 
         ngOnInit() {
-            this.myForm = this.fb.group({
-                phone: ['', [ValidatePhone]] // added the function in validators array of form-control
-            });
+            console.log(this.jsonData);
         }
-    }
-    
-    function ValidatePhone(control: AbstractControl): {[key: string]: any} | null  {
-        if (control.value && control.value.length != 10) {
-            return { 'phoneNumberInvalid': true };
+
+        emitData(data) {
+            this.outputData(data);
         }
-        return null;
     }
 ```
 
-we are adding function to the validators array of Form-Control
+In this way we can pass data from child to parent and from parent to child;
 
-<p class="file-desc"><span>app.component.html</span></span></p>
+Get more detail on [@Input()](https://alligator.io/angular/inputs-angular/)
 
-```html
-    <form [formGroup]="myForm" novalidate class="needs-validation" (ngSubmit)="saveForm(myForm)">
-    <div class="row">
-        <div class="form-group col-sm-4">
-            <label for="">Password</label>
-            <input type="text" class="form-control " formControlName="phone" [class.is-invalid]="(myForm.get('phone').touched || myForm.get('phone').dirty) && myForm.get('password').">
-            <span class="invalid-feedback" *ngIf="(myForm.get('password').touched || myForm.get('password').dirty) && myForm.get('password').invalid">
-                Password is required
-            </span> 
-        </div>
-    </div> 
-    </form>
-```
+Get more detail on [@Output()](https://alligator.io/angular/outputs-angular/)
 
-## Combining both the validators
+## 3. Pass Data through Service using Observables;
 
-Combining both the validators so that we do not repeat the code and follow **DRY**(Don't Repeat Yourself) principle
+If two components are siblings or the level of hierarchy is more than it is good to use service for passing the data through observables.
+Here I am using subject of rxjs for creating observable.
 
-<p class="file-desc"><span>phone-number-validator.ts</span></span></p>
+
+<p class="file-desc"><span>app.service.ts</span></p>
 
 ```typescript
-    import { Directive } from '@angular/core';
-    import { Validator, AbstractControl, NG_VALIDATORS } from '@angular/forms';
+    import { Injectable } from '@angular/core';
+    import { Subject } from 'rxjs';
 
-    export function ValidatePhone(control: AbstractControl): {[key: string]: any} | null  {
-        if (control.value && control.value.length != 10) {
-            return { 'phoneNumberInvalid': true };
-        }
-        return null;
-    }
+    @Injectable({providedIn: 'root'})
+    export class AppService {
+        observer = new Subject();
+        public subscriber$ = this.observer.asObservable();
 
-    @Directive({
-        selector: '[phone]',
-        providers: [{
-            provide: NG_VALIDATORS,
-            useExisting: AppPhoneValidateDirective,
-            multi: true
-        }]
-    })
-    export class AppPhoneValidateDirective implements Validator {
-        validate(control: AbstractControl) : {[key: string]: any} | null {
-        return ValidatePhone(control);
+        emitData(data) {
+            this.observer.next(data);
         }
     }
 ```
 
-For better understanding visit [Providers](https://alligator.io/angular/providers-angular/) and [AbstractControl](https://angular.io/api/forms/AbstractControl)
+For emitting the data you can call the *emitData* method of this service and for getting the data you have to subscibe *subsciber$* like
+
+```typescript
+    constructor(private appService: AppService) {
+    }
+
+    ngOnInit() {
+        this.appService.subscriber$.subscribe(data => {
+            console.log(data);
+        });
+    }
+```
+
